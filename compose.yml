@@ -4,14 +4,29 @@ services:
     restart: always
     environment:
       - TZ=Europe/Vienna
+    expose:
+      - "8443" # HTTPS
     ports:
-      - "8443:8443" # HTTPS
-      - "8123:8123" # DYNMAP
       - "19132:19132/udp" # BEDROCK
       - "25500-25600:25500-25600" # MC SERV PORT RANGE
+      - "8123:8123" # DYNMAP
     volumes:
       - /opt/crafty/backups:/crafty/backups
       - /opt/crafty/logs:/crafty/logs
       - /opt/crafty/servers:/opt/crafty
       - ./crafty_config:/crafty/app/config
       - /opt/crafty/import:/crafty/import
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.crafty.entrypoints=crafty"
+      - "traefik.http.routers.crafty.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.crafty.tls=true"
+      - "traefik.http.services.crafty.loadbalancer.server.port=8443"
+      - "traefik.http.services.crafty.loadbalancer.server.scheme=https"
+      - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto = https"
+    networks:
+        - proxy
+
+networks:
+  proxy:
+    external: true
